@@ -1,17 +1,38 @@
 const WORKING_BASE_KEY = 'projecthub_api_base';
 
+function isLocalDev(): boolean {
+  if (typeof window === 'undefined') return true;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || /^192\.168\.\d+\.\d+$/.test(host);
+}
+
+/** Default Render API when frontend is on Vercel (set VITE_API_URL in Vercel to override). */
+const CLOUD_API_DEFAULT = 'https://hormuud-projecthub.onrender.com/api';
+
 function resolveApiBases(): string[] {
   const fromEnv = import.meta.env.VITE_API_URL as string | undefined;
   if (fromEnv?.trim()) return [fromEnv.trim().replace(/\/$/, '')];
 
   const saved =
     typeof window !== 'undefined' ? sessionStorage.getItem(WORKING_BASE_KEY) : null;
-  const defaults = ['/api', 'http://localhost:3004/api', 'http://127.0.0.1:3004/api'];
+
+  const cloudBases = ['/api', CLOUD_API_DEFAULT];
+  const localBases = ['/api', 'http://localhost:3004/api', 'http://127.0.0.1:3004/api', 'http://localhost:8080/api'];
+  const defaults = isLocalDev() ? localBases : cloudBases;
 
   if (saved && defaults.includes(saved)) {
     return [saved, ...defaults.filter((b) => b !== saved)];
   }
   return defaults;
+}
+
+export function isCloudFrontend(): boolean {
+  return typeof window !== 'undefined' && !isLocalDev();
+}
+
+export function getConfiguredApiUrl(): string | null {
+  const fromEnv = import.meta.env.VITE_API_URL as string | undefined;
+  return fromEnv?.trim() ? fromEnv.trim().replace(/\/$/, '') : null;
 }
 
 const API_BASES = resolveApiBases();
@@ -75,10 +96,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (lastError instanceof ApiError) throw lastError;
-  throw new ApiError(
-    'Cannot reach ProjectHub API. Double-click ProjectHub.bat and keep the API window open.',
-    'NETWORK_ERROR',
-  );
+
+  const cloudHint = isCloudFrontend()
+    ? ' Deploy the API on Render (see VERCEL_DEPLOY.txt) and set VITE_API_URL in Vercel to your API URL, e.g. https://hormuud-projecthub.onrender.com/api'
+    : ' Double-click START_PROJECT.bat and keep the server window open.';
+
+  throw new ApiError(`Cannot reach ProjectHub API.${cloudHint}`, 'NETWORK_ERROR');
 }
 
 export async function checkApiConnection(): Promise<boolean> {

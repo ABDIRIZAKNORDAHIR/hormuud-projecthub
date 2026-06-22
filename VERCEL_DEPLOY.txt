@@ -1,0 +1,72 @@
+================================================================================
+VERCEL + DATABASE + API — COMPLETE SETUP
+================================================================================
+
+HOW IT WORKS (3 pieces connected)
+---------------------------------
+  [ Vercel ]          →  website (what users open)
+       ↓ /api proxy
+  [ Render ]          →  API server (Node.js)
+       ↓ DATABASE_URL
+  [ Supabase ]        →  PostgreSQL database (cloud)
+
+Your PC SQL Server is ONLY for local use (START_PROJECT.bat).
+Vercel cannot use SQL Server — cloud uses PostgreSQL (Supabase).
+
+================================================================================
+STEP 1 — DATABASE (Supabase, 5 min)
+================================================================================
+1. https://supabase.com → Sign in → New project
+2. Name: projecthub
+3. Settings → Database → Connection string → URI
+4. Copy DATABASE_URL (looks like postgresql://postgres:...@db....supabase.co:5432/postgres)
+
+================================================================================
+STEP 2 — API (Render, 10 min)
+================================================================================
+1. https://dashboard.render.com → New → Blueprint
+2. Connect GitHub: ABDIRIZAKNORDAHIR/hormuud-projecthub
+3. Environment variables:
+   DATABASE_URL     = (paste from Supabase)
+   DB_DRIVER        = postgres
+   SERVE_STATIC     = true
+   PUBLIC_DEPLOY    = true
+   JWT_SECRET       = any-long-random-string
+   GROQ_API_KEY     = optional
+4. Deploy → wait until Live
+5. Test in browser:
+   https://hormuud-projecthub.onrender.com/api/health
+
+   Must show:
+   "status": "ok"
+   "database": "PostgreSQL (...)"  or similar
+
+================================================================================
+STEP 3 — FRONTEND (Vercel, 5 min)
+================================================================================
+1. https://vercel.com → Import GitHub repo hormuud-projecthub
+2. Framework: Vite (auto-detected)
+3. Environment Variables → Add:
+   RENDER_API_URL = https://hormuud-projecthub.onrender.com
+   (your Render URL, NO /api at the end)
+4. Deploy
+
+The app uses /api on Vercel → automatically proxies to Render → database.
+
+================================================================================
+VERIFY EVERYTHING IS CONNECTED
+================================================================================
+Open your Vercel URL → Admin → System Health
+
+  ✓ API Service     = OK
+  ✓ SQL Server card = shows PostgreSQL / database connected (green)
+
+Login: admin@hu.edu / ProjectHub123!
+
+================================================================================
+LOCAL (your computer) — separate from Vercel
+================================================================================
+Double-click START_PROJECT.bat
+Uses SQL Server (AHMED666\TEW_SQLEXPRESS) — not Supabase.
+
+================================================================================

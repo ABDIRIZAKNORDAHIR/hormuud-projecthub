@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install && npm run build && cd server && npm install
-    startCommand: node server/src/setupDatabasePg.js && node server/src/seed.js && node server/src/index.js
+    startCommand: node server/src/setupDatabasePg.js && (node server/src/seed.js || true) && node server/src/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
